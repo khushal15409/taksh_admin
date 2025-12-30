@@ -3,8 +3,14 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\DataSetting;
+use App\Models\Banner;
+use App\Models\Item;
+use App\Scopes\ZoneScope;
+use App\CentralLogics\Helpers;
+use App\CentralLogics\ProductLogic;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -62,5 +68,189 @@ class HomeController extends Controller
             $data = $data ? $data->value: '';
         }
         return $data;
+    }
+
+    public function dashboard(Request $request)
+    {
+        try {
+            // Zone ID is optional - if not provided, get all data without zone filter
+            $zone_id = $request->header('zoneId');
+            $limit = (int)$request->query('limit', 10); // Default limit for products
+            $offset = (int)$request->query('offset', 1); // Default offset for products
+            
+            $sections = [];
+            
+            // Section 1: Banners (Top Offers)
+            $bannerQuery = Banner::withoutGlobalScope(ZoneScope::class)
+                ->with('storage')
+                ->active()
+                ->where('type', 'default');
+            
+            if($zone_id) {
+                $zoneIds = is_array($zone_id) ? $zone_id : json_decode($zone_id, true);
+                if($zoneIds && is_array($zoneIds) && count($zoneIds) > 0) {
+                    $bannerQuery->whereIn('zone_id', $zoneIds);
+                }
+            }
+            
+            $moduleData = config('module.current_module_data');
+            if($moduleData && isset($moduleData['id'])) {
+                $bannerQuery->where('module_id', $moduleData['id']);
+            }
+            
+            // Order by id (priority column may not exist in all installations)
+            $banners = $bannerQuery->orderBy('id', 'desc')->limit(10)->get();
+            
+            $bannerData = [];
+            foreach($banners as $banner) {
+                $imageUrl = $banner->image_full_url ?? $banner->image;
+                if($imageUrl) {
+                    $bannerData[] = [
+                        'image' => $imageUrl
+                    ];
+                }
+            }
+            
+            $sections[] = [
+                'id' => '1',
+                'type' => 'banner',
+                'title' => 'Top Offers',
+                'position' => 1,
+                'data' => $bannerData
+            ];
+            
+            // Section 2: Featured Products
+            $featuredQuery = Item::active()->where('recommended', 1);
+            
+            if($zone_id) {
+                $zoneIds = is_array($zone_id) ? $zone_id : json_decode($zone_id, true);
+                if($zoneIds && is_array($zoneIds) && count($zoneIds) > 0) {
+                    $featuredQuery->whereHas('store', function($q) use ($zoneIds) {
+                        $q->whereIn('zone_id', $zoneIds);
+                    });
+                }
+            }
+            
+            if($moduleData && isset($moduleData['id'])) {
+                $featuredQuery->module($moduleData['id'])
+                    ->whereHas('store', function($q) use ($moduleData) {
+                        $q->where('module_id', $moduleData['id']);
+                    });
+            }
+            
+            $featuredProducts = $featuredQuery->orderBy('order_count', 'desc')->limit($limit)->get();
+            
+            $featuredData = [];
+            foreach($featuredProducts as $product) {
+                if($product) {
+                    $featuredData[] = [
+                        'id' => (string)($product->id ?? ''),
+                        'name' => $product->name ?? '',
+                        'price' => (float)($product->price ?? 0),
+                        'discount' => (float)($product->discount ?? 0),
+                        'image' => $product->image_full_url ?? $product->image ?? '',
+                        'rating' => (float)($product->avg_rating ?? 0),
+                        'store_id' => $product->store_id ?? null
+                    ];
+                }
+            }
+            
+            $totalFeaturedQuery = Item::active()->where('recommended', 1);
+            
+            if($zone_id) {
+                $zoneIds = is_array($zone_id) ? $zone_id : json_decode($zone_id, true);
+                if($zoneIds && is_array($zoneIds) && count($zoneIds) > 0) {
+                    $totalFeaturedQuery->whereHas('store', function($q) use ($zoneIds) {
+                        $q->whereIn('zone_id', $zoneIds);
+                    });
+                }
+            }
+            
+            $totalFeatured = $totalFeaturedQuery->count();
+            
+            $sections[] = [
+                'id' => '2',
+                'type' => 'products',
+                'title' => 'Featured Products',
+                'position' => 2,
+                'pagination' => [
+                    'page' => $offset,
+                    'hasMore' => ($offset * $limit) < $totalFeatured
+                ],
+                'data' => $featuredData
+            ];
+            
+            // Section 3: New Arrivals
+            $newProductsQuery = Item::active();
+            
+            if($zone_id) {
+                $zoneIds = is_array($zone_id) ? $zone_id : json_decode($zone_id, true);
+                if($zoneIds && is_array($zoneIds) && count($zoneIds) > 0) {
+                    $newProductsQuery->whereHas('store', function($q) use ($zoneIds) {
+                        $q->whereIn('zone_id', $zoneIds);
+                    });
+                }
+            }
+            
+            if($moduleData && isset($moduleData['id'])) {
+                $newProductsQuery->module($moduleData['id'])
+                    ->whereHas('store', function($q) use ($moduleData) {
+                        $q->where('module_id', $moduleData['id']);
+                    });
+            }
+            
+            $newProducts = $newProductsQuery->orderBy('created_at', 'desc')->limit($limit)->get();
+            
+            $newArrivalsData = [];
+            foreach($newProducts as $product) {
+                if($product) {
+                    $newArrivalsData[] = [
+                        'id' => (string)($product->id ?? ''),
+                        'name' => $product->name ?? '',
+                        'price' => (float)($product->price ?? 0),
+                        'discount' => (float)($product->discount ?? 0),
+                        'image' => $product->image_full_url ?? $product->image ?? '',
+                        'rating' => (float)($product->avg_rating ?? 0),
+                        'store_id' => $product->store_id ?? null
+                    ];
+                }
+            }
+            
+            $totalNewQuery = Item::active();
+            
+            if($zone_id) {
+                $zoneIds = is_array($zone_id) ? $zone_id : json_decode($zone_id, true);
+                if($zoneIds && is_array($zoneIds) && count($zoneIds) > 0) {
+                    $totalNewQuery->whereHas('store', function($q) use ($zoneIds) {
+                        $q->whereIn('zone_id', $zoneIds);
+                    });
+                }
+            }
+            
+            $totalNew = $totalNewQuery->count();
+            
+            $sections[] = [
+                'id' => '3',
+                'type' => 'products',
+                'title' => 'New Arrivals',
+                'position' => 3,
+                'pagination' => [
+                    'page' => $offset,
+                    'hasMore' => ($offset * $limit) < $totalNew
+                ],
+                'data' => $newArrivalsData
+            ];
+            
+            return response()->json([
+                'sections' => $sections
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'An error occurred while fetching dashboard data',
+                'message' => $e->getMessage(),
+                'sections' => []
+            ], 500);
+        }
     }
 }

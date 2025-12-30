@@ -34,27 +34,40 @@ class CustomerAuthController extends Controller
     public function verify_phone_or_email(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'otp'=>'required',
+            'otp'=>'required|numeric|digits:6',
             'verification_type' => 'required|in:phone,email',
-            'phone' => 'required_if:verification_type,phone|min:9|max:14',
+            'phone' => 'required_if:verification_type,phone|regex:/^[0-9]{10}$/',
             'email' => 'required_if:verification_type,email|email',
             'login_type' => 'required|in:manual,otp'
+        ], [
+            'phone.regex' => 'Phone number must be exactly 10 digits',
+            'otp.digits' => 'OTP must be exactly 6 digits',
+            'otp.numeric' => 'OTP must be numeric'
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
 
-        if($request->phone){
-            $user = User::where('phone', $request->phone)->first();
-        }
-        if($request->email){
-            $user = User::where('email', $request->email)->first();
-        }
         $temporaryToken = null;
 
-        if($user && $request->login_type== 'manual')
+        if($request->login_type== 'manual')
         {
+            // Check if user exists for manual login
+            $user = null;
+            if($request->phone){
+                $user = User::where('phone', $request->phone)->first();
+            }
+            if($request->email){
+                $user = User::where('email', $request->email)->first();
+            }
+            
+            if(!$user) {
+                $errors = [];
+                array_push($errors, ['code' => 'user_not_found', 'message' => translate('messages.user_not_found')]);
+                return response()->json(['errors' => $errors], 404);
+            }
+            
             if($request->verification_type == 'phone' && $user->is_phone_verified)
             {
                 return response()->json([
@@ -114,6 +127,72 @@ class CustomerAuthController extends Controller
                     'phone' => $request['phone'],
                     'token' => $request['otp'],
                 ])->first();
+                
+                // Check OTP expiration (5 minutes = 300 seconds)
+                if($data) {
+                    $otp_expiration_time = 300; // 5 minutes in seconds
+                    $otp_age = Carbon::parse($data->created_at)->DiffInSeconds();
+                    
+                    if($otp_age > $otp_expiration_time) {
+                        // Delete expired OTP
+                        DB::table('phone_verifications')->where([
+                            'phone' => $request['phone'],
+                            'token' => $request['otp'],
+                        ])->delete();
+                        
+                        $errors = [];
+                        array_push($errors, ['code' => 'otp_expired', 'message' => translate('messages.OTP has expired. Please request a new one')]);
+                        return response()->json(['errors' => $errors], 403);
+                    }
+                } else {
+                    // OTP not found - check if phone exists and increment hit count
+                    $verification_data = DB::table('phone_verifications')->where('phone', $request['phone'])->first();
+                    if($verification_data) {
+                        $max_otp_hit = 5;
+                        $max_otp_hit_time = 60; // seconds
+                        $temp_block_time = 600; // seconds
+                        
+                        if (isset($verification_data->temp_block_time) && Carbon::parse($verification_data->temp_block_time)->DiffInSeconds() <= $temp_block_time) {
+                            $time = $temp_block_time - Carbon::parse($verification_data->temp_block_time)->DiffInSeconds();
+                            $errors = [];
+                            array_push($errors, ['code' => 'otp_block_time',
+                                'message' => translate('messages.please_try_again_after_') . CarbonInterval::seconds($time)->cascade()->forHumans()
+                            ]);
+                            return response()->json(['errors' => $errors], 405);
+                        }
+                        
+                        if ($verification_data->is_temp_blocked == 1 && Carbon::parse($verification_data->updated_at)->DiffInSeconds() >= $max_otp_hit_time) {
+                            DB::table('phone_verifications')->updateOrInsert(['phone' => $request['phone']],
+                                [
+                                    'otp_hit_count' => 0,
+                                    'is_temp_blocked' => 0,
+                                    'temp_block_time' => null,
+                                    'updated_at' => now(),
+                                ]);
+                        }
+                        
+                        if ($verification_data->otp_hit_count >= $max_otp_hit && Carbon::parse($verification_data->updated_at)->DiffInSeconds() < $max_otp_hit_time && $verification_data->is_temp_blocked == 0) {
+                            DB::table('phone_verifications')->updateOrInsert(['phone' => $request['phone']],
+                                [
+                                    'is_temp_blocked' => 1,
+                                    'temp_block_time' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            $errors = [];
+                            array_push($errors, ['code' => 'otp_block_time',
+                                'message' => translate('messages.please_try_again_after_') . CarbonInterval::seconds($temp_block_time)->cascade()->forHumans()
+                            ]);
+                            return response()->json(['errors' => $errors], 405);
+                        }
+                        
+                        DB::table('phone_verifications')->updateOrInsert(['phone' => $request['phone']],
+                            [
+                                'otp_hit_count' => DB::raw('otp_hit_count + 1'),
+                                'updated_at' => now(),
+                                'temp_block_time' => null,
+                            ]);
+                    }
+                }
             }
 
 
@@ -217,63 +296,105 @@ class CustomerAuthController extends Controller
             }
         }
         if($request->login_type== 'otp'){
+            // First verify the OTP (no user check at this point)
             $data = DB::table('phone_verifications')->where([
                 'phone' => $request['phone'],
                 'token' => $request['otp'],
             ])->first();
-
-            if($data){
-                if($user && $user->is_phone_verified == 0 && $user->is_from_pos == 0){
-                    $is_exist_user = $this->exist_user($user);
-                    $user_email = null;
-                    if($user->email){
-                        $user_email = $user->email;
-                    }
-                    return response()->json(['token' => $temporaryToken, 'is_phone_verified'=>1, 'is_email_verified'=>1, 'is_personal_info' => 1, 'is_exist_user' =>$is_exist_user, 'login_type' => 'otp', 'email' => $user_email], 200);
-                }elseif (($user && $user->is_phone_verified == 1) || ($user && $user->is_phone_verified == 0 && $user->is_from_pos == 1)){
+            
+            // Check OTP expiration (5 minutes = 300 seconds)
+            if($data) {
+                $otp_expiration_time = 300; // 5 minutes in seconds
+                $otp_age = Carbon::parse($data->created_at)->DiffInSeconds();
+                
+                if($otp_age > $otp_expiration_time) {
+                    // Delete expired OTP
                     DB::table('phone_verifications')->where([
                         'phone' => $request['phone'],
                         'token' => $request['otp'],
                     ])->delete();
-                    $is_personal_info = 0;
-                    if($user->f_name){
-                        $is_personal_info = 1;
-                    }
-                    $user_email = null;
-                    if($user->email){
-                        $user_email = $user->email;
-                    }
-                    if ($is_personal_info == 1 && auth()->loginUsingId($user->id)) {
-                        $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
-                        if(isset($request['guest_id'])){
-                            $this->check_guest_cart($user, $request['guest_id']);
-                        }
-                    }
-                    return response()->json(['token' => isset($token)?$token:$temporaryToken, 'is_phone_verified'=>1, 'is_email_verified'=>1, 'is_personal_info' => $is_personal_info, 'is_exist_user' =>null, 'login_type' => $request->login_type, 'email' => $user_email], 200);
+                    
+                    $errors = [];
+                    array_push($errors, ['code' => 'otp_expired', 'message' => translate('messages.OTP has expired. Please request a new one')]);
+                    return response()->json(['errors' => $errors], 403);
                 }
-                else{
-                    $user = new User();
-                    $user->phone = $request['phone'];
-                    $user->password = bcrypt($request['phone']);
-                    $user->is_phone_verified = 1;
-                    $user->login_medium = 'otp';
-                    $user->save();
-
-                    $this->refer_code_check($user);
-
-                    $is_personal_info = 0;
-                    $user_email = null;
-                    if($user->email){
-                        $user_email = $user->email;
-                    }
-
-                    return response()->json(['token' => $temporaryToken, 'is_phone_verified'=>1, 'is_email_verified'=>1, 'is_personal_info' => $is_personal_info, 'is_exist_user' => null, 'login_type' => 'otp', 'email' => $user_email], 200);
-                }
-            }else{
+            } else {
+                // OTP verification failed
                 return response()->json([
                     'message' => translate('OTP does not match')
                 ], 404);
             }
+
+            // OTP is valid, now check if user exists
+            $user = User::where('phone', $request['phone'])->first();
+            
+            // If user doesn't exist, create a new user (register)
+            if(!$user) {
+                $user = new User();
+                $user->phone = $request['phone'];
+                $user->password = bcrypt($request['phone']);
+                $user->is_phone_verified = 1;
+                $user->login_medium = 'otp';
+                $user->status = 1; // Set status to active (1) for new users
+                $user->save();
+                
+                $this->refer_code_check($user);
+            } else {
+                // User exists, update verification status
+                $user->is_phone_verified = 1;
+                $user->login_medium = 'otp';
+                $user->save();
+            }
+            
+            // Check if account is blocked
+            if(isset($user->status) && $user->status == 0) {
+                $errors = [];
+                array_push($errors, ['code' => 'auth-003', 'message' => translate('messages.your_account_is_blocked')]);
+                return response()->json(['errors' => $errors], 403);
+            }
+            
+            // Delete the used OTP
+            DB::table('phone_verifications')->where([
+                'phone' => $request['phone'],
+                'token' => $request['otp'],
+            ])->delete();
+            
+            // Prepare response data
+            $is_personal_info = 0;
+            if($user->f_name){
+                $is_personal_info = 1;
+            }
+            
+            $user_email = null;
+            if($user->email){
+                $user_email = $user->email;
+            }
+            
+            $token = null;
+            $is_exist_user = null;
+            
+            // If user existed before (not newly created), check if they need to update info
+            if($user->wasRecentlyCreated === false && $user->is_phone_verified == 0 && $user->is_from_pos == 0) {
+                $is_exist_user = $this->exist_user($user);
+            }
+            
+            // Generate token if user has personal info
+            if ($is_personal_info == 1 && auth()->loginUsingId($user->id)) {
+                $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
+                if(isset($request['guest_id'])){
+                    $this->check_guest_cart($user, $request['guest_id']);
+                }
+            }
+            
+            return response()->json([
+                'token' => isset($token) ? $token : $temporaryToken, 
+                'is_phone_verified' => 1, 
+                'is_email_verified' => $user->is_email_verified ?? 0, 
+                'is_personal_info' => $is_personal_info, 
+                'is_exist_user' => $is_exist_user, 
+                'login_type' => 'otp', 
+                'email' => $user_email
+            ], 200);
         }
         return response()->json([
             'message' => translate('messages.not_found')
@@ -285,9 +406,13 @@ class CustomerAuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'session_info' => 'required',
-            'phone' => 'required',
-            'otp' => 'required',
+            'phone' => 'required|regex:/^[0-9]{10}$/',
+            'otp' => 'required|numeric|digits:6',
             'login_type' => 'required|in:manual,otp'
+        ], [
+            'phone.regex' => 'Phone number must be exactly 10 digits',
+            'otp.digits' => 'OTP must be exactly 6 digits',
+            'otp.numeric' => 'OTP must be numeric'
         ]);
 
         if ($validator->fails()) {
@@ -651,7 +776,9 @@ class CustomerAuthController extends Controller
         if($request->login_type == 'otp'){
 
             $validator = Validator::make($request->all(), [
-                'phone' => 'required',
+                'phone' => 'required|regex:/^[0-9]{10}$/',
+            ], [
+                'phone.regex' => 'Phone number must be exactly 10 digits'
             ]);
 
             if ($validator->fails()) {
@@ -868,81 +995,109 @@ class CustomerAuthController extends Controller
         }
     }
     private function otp_login($request_data){
+        // First verify the OTP (no user check at this point)
         $data = DB::table('phone_verifications')->where([
             'phone' => $request_data['phone'],
             'token' => $request_data['otp'],
         ])->first();
 
-        if($data){
-            if($request_data['verified'] == 'no'){
-                $user = User::where('phone', $request_data['phone'])->first();
-                $user->phone = null;
-                $user->save();
-
-                $user = new User();
-                $user->phone = $request_data['phone'];
-                $user->password = bcrypt($request_data['phone']);
-                $user->save();
-            }
-            $user = User::where('phone', $request_data['phone'])->first();
-
-            if(!$user->status)
-            {
-                $errors = [];
-                array_push($errors, ['code' => 'auth-003', 'message' => translate('messages.your_account_is_blocked')]);
-                return response()->json([
-                    'errors' => $errors
-                ], 403);
-            }
-
-            $this->refer_code_check($user);
-
-            $user->login_medium = 'otp';
-            $user->is_phone_verified = 1;
-            $user->save();
-
-            $is_personal_info = 0;
-            if($user->f_name){
-                $is_personal_info = 1;
-            }
-
+        if(!$data){
+            return response()->json([
+                'message' => translate('OTP does not match')
+            ], 404);
+        }
+        
+        // Check OTP expiration (5 minutes = 300 seconds)
+        $otp_expiration_time = 300; // 5 minutes in seconds
+        $otp_age = Carbon::parse($data->created_at)->DiffInSeconds();
+        
+        if($otp_age > $otp_expiration_time) {
+            // Delete expired OTP
             DB::table('phone_verifications')->where([
                 'phone' => $request_data['phone'],
                 'token' => $request_data['otp'],
             ])->delete();
-
-            $token = null;
-            if ($is_personal_info == 1 && auth()->loginUsingId($user->id)) {
-                $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
-                if(isset($request_data['guest_id'])){
-                    $this->check_guest_cart($user, $request_data['guest_id']);
-                }
-            }
-
-            // Refresh user to get latest data
-            $user->refresh();
             
-            // Format user data
-            $userData = $user->toArray();
-            $userData['userinfo'] = $user->userinfo;
-            $userData['order_count'] = (integer)$user->orders()->count();
-            $userData['member_since_days'] = (integer)$user->created_at->diffInDays();
-            $userData['selected_modules_for_interest'] = $user->module_ids ? json_decode($user->module_ids, true) : [];
-            unset($userData['password'], $userData['remember_token'], $userData['interest']);
-
-            return response()->json([
-                'code' => 200,
-                'status' => true,
-                'message' => 'Login successful!',
-                'token' => $token,
-                'login_type' => 'otp',
-                'user' => $userData
-            ], 200);
+            $errors = [];
+            array_push($errors, ['code' => 'otp_expired', 'message' => translate('messages.OTP has expired. Please request a new one')]);
+            return response()->json(['errors' => $errors], 403);
+        }
+        
+        // OTP is valid, now check if user exists
+        $user = User::where('phone', $request_data['phone'])->first();
+        
+        // Handle verified == 'no' case (user wants to change phone)
+        if($request_data['verified'] == 'no' && $user) {
+            $user->phone = null;
+            $user->save();
+            $user = null; // Reset to create new user
+        }
+        
+        // If user doesn't exist, create a new user (register)
+        if(!$user) {
+            $user = new User();
+            $user->phone = $request_data['phone'];
+            $user->password = bcrypt($request_data['phone']);
+            $user->is_phone_verified = 1;
+            $user->login_medium = 'otp';
+            $user->status = 1; // Set status to active (1) for new users
+            $user->save();
+            
+            $this->refer_code_check($user);
+        } else {
+            // User exists, update verification status
+            $user->is_phone_verified = 1;
+            $user->login_medium = 'otp';
+            $user->save();
         }
 
+        // Check if account is blocked
+        if(isset($user->status) && $user->status == 0) {
+            $errors = [];
+            array_push($errors, ['code' => 'auth-003', 'message' => translate('messages.your_account_is_blocked')]);
+            return response()->json([
+                'errors' => $errors
+            ], 403);
+        }
+
+        // Delete the used OTP
+        DB::table('phone_verifications')->where([
+            'phone' => $request_data['phone'],
+            'token' => $request_data['otp'],
+        ])->delete();
+
+        $is_personal_info = 0;
+        if($user->f_name){
+            $is_personal_info = 1;
+        }
+
+        $token = null;
+        if ($is_personal_info == 1 && auth()->loginUsingId($user->id)) {
+            $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
+            if(isset($request_data['guest_id'])){
+                $this->check_guest_cart($user, $request_data['guest_id']);
+            }
+        }
+
+        // Refresh user to get latest data
+        $user->refresh();
+        
+        // Format user data
+        $userData = $user->toArray();
+        $userData['userinfo'] = $user->userinfo;
+        $userData['order_count'] = (integer)$user->orders()->count();
+        $userData['member_since_days'] = (integer)$user->created_at->diffInDays();
+        $userData['selected_modules_for_interest'] = $user->module_ids ? json_decode($user->module_ids, true) : [];
+        unset($userData['password'], $userData['remember_token'], $userData['interest']);
+
         return response()->json([
-            'message' => translate('OTP does not match')
-        ], 404);
+            'code' => 200,
+            'status' => true,
+            'message' => 'Login successful!',
+            'token' => $token,
+            'login_type' => 'otp',
+            'user' => $userData
+        ], 200);
 
 
     }
@@ -1075,6 +1230,13 @@ class CustomerAuthController extends Controller
     }
 
     private function verification_check($request_data){
+        // Validate phone number format (10 digits)
+        if(!isset($request_data['phone']) || !preg_match('/^[0-9]{10}$/', $request_data['phone'])) {
+            $errors = [];
+            array_push($errors, ['code' => 'phone', 'message' => 'Phone number must be exactly 10 digits']);
+            return $errors;
+        }
+        
         $firebase_otp_verification = BusinessSetting::where('key', 'firebase_otp_verification')->first()?->value??0;
         if(!$firebase_otp_verification)
         {

@@ -7939,4 +7939,6 @@ Smartly or Earn. ',
   'phone_number_is_already_verified' => 'Phone number is already verified',
   'user_not_found!' => 'User not found!',
   'failed_to_send_mail' => 'Failed to send mail',
+  'OTP has expired. Please request a new one' => 'OTP has expired. Please request a new one',
+  'your_account_is_blocked' => 'Your account is blocked',
 );
