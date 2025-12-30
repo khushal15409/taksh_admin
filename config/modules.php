@@ -144,7 +144,7 @@ return [
     'commands' => [
         // CommandMakeCommand removed in nwidart/laravel-modules v12 - use artisan make:command instead
         // Commands\CommandMakeCommand::class,
-        Commands\Make\ComponentClassMakeCommand::class,
+        // Commands\Make\ComponentClassMakeCommand::class,
         Commands\Make\ComponentViewMakeCommand::class,
         Commands\Make\ControllerMakeCommand::class,
         Commands\Actions\DisableCommand::class,
