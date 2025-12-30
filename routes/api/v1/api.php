@@ -6,7 +6,7 @@
 use Illuminate\Support\Facades\Route;
 // use BeyondCode\LaravelWebSockets\Facades\WebSocketsRouter;
 
-/*
+/*     
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
