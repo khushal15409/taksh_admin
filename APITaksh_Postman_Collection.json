@@ -1,0 +1,1591 @@
+{
+	"info": {
+		"_postman_id": "apitaksh-collection-001",
+		"name": "APITaksh - Auth & Dashboard APIs",
+		"description": "Complete Postman collection for APITaksh project including Authentication and Dashboard APIs with all parameters",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "apitaksh"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Customer Registration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"phone\": \"+1234567890\",\n    \"password\": \"password123\",\n    \"email\": \"john@example.com\",\n    \"ref_code\": \"REF123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/sign-up",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "sign-up"]
+						},
+						"description": "Register a new customer account\n\n**Required Fields:**\n- name: User's full name\n- phone: Phone number (must be unique)\n- password: Minimum 8 characters\n\n**Optional Fields:**\n- email: Email address (must be unique if provided)\n- ref_code: Referral code"
+					},
+					"response": []
+				},
+				{
+					"name": "Customer Login - Manual",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login_type\": \"manual\",\n    \"email_or_phone\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"field_type\": \"email\",\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Manual login with email/phone and password\n\n**Required Fields:**\n- login_type: \"manual\"\n- email_or_phone: Email or phone number\n- password: Minimum 6 characters\n- field_type: \"phone\" or \"email\"\n\n**Optional Fields:**\n- guest_id: Guest user ID for cart transfer"
+					},
+					"response": []
+				},
+				{
+					"name": "Customer Login - OTP (Request OTP)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login_type\": \"otp\",\n    \"phone\": \"+1234567890\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Request OTP for phone number\n\n**Required Fields:**\n- login_type: \"otp\"\n- phone: Phone number"
+					},
+					"response": []
+				},
+				{
+					"name": "Customer Login - OTP (Verify)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login_type\": \"otp\",\n    \"phone\": \"+1234567890\",\n    \"otp\": \"123456\",\n    \"verified\": \"default\",\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Verify OTP and complete login\n\n**Required Fields:**\n- login_type: \"otp\"\n- phone: Phone number\n- otp: OTP code received\n- verified: \"default\" or \"no\"\n\n**Optional Fields:**\n- guest_id: Guest user ID for cart transfer"
+					},
+					"response": []
+				},
+				{
+					"name": "Customer Login - Social (Google/Facebook/Apple)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"login_type\": \"social\",\n    \"token\": \"social_provider_token\",\n    \"unique_id\": \"unique_id_from_provider\",\n    \"email\": \"user@example.com\",\n    \"medium\": \"google\",\n    \"verified\": \"default\",\n    \"guest_id\": \"123\",\n    \"access_token\": 1,\n    \"platform\": \"flutter_app\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "login"]
+						},
+						"description": "Social login with Google, Facebook, or Apple\n\n**Required Fields:**\n- login_type: \"social\"\n- token: Social provider token\n- unique_id: Unique identifier from provider\n- medium: \"google\", \"facebook\", or \"apple\"\n- email: Required for Google/Facebook\n\n**Optional Fields:**\n- verified: \"default\" or \"no\"\n- guest_id: Guest user ID\n- access_token: 1 for access token, 0 for ID token\n- platform: \"flutter_app\", \"flutter_web\", or \"react_web\""
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Phone or Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"otp\": \"123456\",\n    \"verification_type\": \"phone\",\n    \"phone\": \"+1234567890\",\n    \"email\": \"user@example.com\",\n    \"login_type\": \"manual\",\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/verify-phone",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "verify-phone"]
+						},
+						"description": "Verify phone or email with OTP\n\n**Required Fields:**\n- otp: OTP code\n- verification_type: \"phone\" or \"email\"\n- phone: Required if verification_type is phone\n- email: Required if verification_type is email\n- login_type: \"manual\" or \"otp\""
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Info",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"login_type\": \"otp\",\n    \"phone\": \"+1234567890\",\n    \"email\": \"john@example.com\",\n    \"ref_code\": \"REF123456\",\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/update-info",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "update-info"]
+						},
+						"description": "Update user information after OTP or social login\n\n**Required Fields:**\n- name: User's full name\n- login_type: \"otp\", \"social\", or \"manual\"\n- phone: Phone number (min 9, max 14)\n- email: Valid email address"
+					},
+					"response": []
+				},
+				{
+					"name": "Firebase Verify Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"session_info\": \"firebase_session_info\",\n    \"phone\": \"+1234567890\",\n    \"otp\": \"123456\",\n    \"login_type\": \"manual\",\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/firebase-verify-token",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "firebase-verify-token"]
+						},
+						"description": "Verify Firebase authentication token\n\n**Required Fields:**\n- session_info: Firebase session info\n- phone: Phone number\n- otp: OTP code\n- login_type: \"manual\" or \"otp\""
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password - Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"verification_method\": \"phone\",\n    \"phone\": \"+1234567890\",\n    \"email\": \"user@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/forgot-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "forgot-password"]
+						},
+						"description": "Request password reset OTP\n\n**Required Fields:**\n- verification_method: \"phone\" or \"email\"\n- phone: Required if verification_method is phone\n- email: Required if verification_method is email"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password - Verify Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reset_token\": \"123456\",\n    \"verification_method\": \"phone\",\n    \"phone\": \"+1234567890\",\n    \"email\": \"user@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/verify-token",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "verify-token"]
+						},
+						"description": "Verify password reset token\n\n**Required Fields:**\n- reset_token: OTP token\n- verification_method: \"phone\" or \"email\"\n- phone: Required if verification_method is phone\n- email: Required if verification_method is email"
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password - Reset",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"reset_token\": \"123456\",\n    \"password\": \"newpassword123\",\n    \"confirm_password\": \"newpassword123\",\n    \"verification_method\": \"phone\",\n    \"phone\": \"+1234567890\",\n    \"email\": \"user@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/reset-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "reset-password"]
+						},
+						"description": "Reset password with verified token\n\n**Required Fields:**\n- reset_token: OTP token\n- password: New password (min 8 characters)\n- confirm_password: Must match password\n- verification_method: \"phone\" or \"email\"\n- phone: Required if verification_method is phone\n- email: Required if verification_method is email"
+					},
+					"response": []
+				},
+				{
+					"name": "Guest Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"fcm_token\": \"firebase_cloud_messaging_token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/guest/request",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "guest", "request"]
+						},
+						"description": "Create a guest user session\n\n**Optional Fields:**\n- fcm_token: Firebase Cloud Messaging token"
+					},
+					"response": []
+				},
+				{
+					"name": "External Login (Drivemond)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone\": \"+1234567890\",\n    \"token\": \"drivemond_token\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/external-login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "auth", "external-login"]
+						},
+						"description": "Login from external system (Drivemond)\n\n**Required Fields:**\n- phone: Phone number\n- token: External system token (min 6 characters)"
+					},
+					"response": []
+				}
+			],
+			"description": "Customer authentication endpoints"
+		},
+		{
+			"name": "Dashboard - Customer",
+			"item": [
+				{
+					"name": "Get Customer Info",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/info",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "info"]
+						},
+						"description": "Get authenticated customer information"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Customer Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"f_name\": \"John\",\n    \"l_name\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"image\": \"base64_encoded_image_or_url\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/update-profile",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "update-profile"]
+						},
+						"description": "Update customer profile information"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/notifications",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "notifications"]
+						},
+						"description": "Get customer notifications"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Zone",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/update-zone?zone_id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "update-zone"],
+							"query": [
+								{
+									"key": "zone_id",
+									"value": "1",
+									"description": "Zone ID"
+								}
+							]
+						},
+						"description": "Update customer zone"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Interest",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"module_ids\": [1, 2, 3]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/update-interest",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "update-interest"]
+						},
+						"description": "Update customer interest modules"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Firebase Token",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cm_firebase_token\": \"firebase_token_here\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/cm-firebase-token",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "cm-firebase-token"]
+						},
+						"description": "Update customer Firebase Cloud Messaging token"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Suggested Items",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/suggested-items",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "suggested-items"]
+						},
+						"description": "Get suggested items for customer"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Account",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/remove-account",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "remove-account"]
+						},
+						"description": "Remove customer account"
+					},
+					"response": []
+				}
+			],
+			"description": "Customer dashboard endpoints"
+		},
+		{
+			"name": "Address Management",
+			"item": [
+				{
+					"name": "Get Address List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/address/list?limit=10&offset=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "address", "list"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of records per page"
+								},
+								{
+									"key": "offset",
+									"value": "1",
+									"description": "Page number"
+								}
+							]
+						},
+						"description": "Get list of customer addresses"
+					},
+					"response": []
+				},
+				{
+					"name": "Add New Address",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contact_person_name\": \"John Doe\",\n    \"address_type\": \"home\",\n    \"contact_person_number\": \"+1234567890\",\n    \"address\": \"123 Main Street\",\n    \"longitude\": \"-122.4194\",\n    \"latitude\": \"37.7749\",\n    \"floor\": \"2nd Floor\",\n    \"road\": \"Main Road\",\n    \"house\": \"House 123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/address/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "address", "add"]
+						},
+						"description": "Add a new customer address\n\n**Required Fields:**\n- contact_person_name\n- address_type\n- contact_person_number\n- address\n- longitude\n- latitude\n\n**Optional Fields:**\n- floor\n- road\n- house"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Address",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contact_person_name\": \"John Doe\",\n    \"address_type\": \"home\",\n    \"contact_person_number\": \"+1234567890\",\n    \"address\": \"123 Main Street\",\n    \"longitude\": \"-122.4194\",\n    \"latitude\": \"37.7749\",\n    \"floor\": \"2nd Floor\",\n    \"road\": \"Main Road\",\n    \"house\": \"House 123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/address/update/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "address", "update", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Address ID"
+								}
+							]
+						},
+						"description": "Update an existing address\n\n**Required Fields:**\n- contact_person_name\n- address_type\n- contact_person_number\n- address\n- longitude\n- latitude"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Address",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"address_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/address/delete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "address", "delete"]
+						},
+						"description": "Delete a customer address\n\n**Required Fields:**\n- address_id"
+					},
+					"response": []
+				}
+			],
+			"description": "Customer address management endpoints"
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Get Order List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/list?limit=10&offset=1&guest_id=123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "list"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10",
+									"description": "Number of records per page"
+								},
+								{
+									"key": "offset",
+									"value": "1",
+									"description": "Page number"
+								},
+								{
+									"key": "guest_id",
+									"value": "123",
+									"description": "Guest ID (required if not authenticated)"
+								}
+							]
+						},
+						"description": "Get list of customer orders\n\n**Required Fields:**\n- limit\n- offset\n- guest_id (if not authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Running Orders",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/running-orders?limit=10&offset=1&guest_id=123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "running-orders"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "offset",
+									"value": "1"
+								},
+								{
+									"key": "guest_id",
+									"value": "123"
+								}
+							]
+						},
+						"description": "Get running/active orders\n\n**Required Fields:**\n- limit\n- offset\n- guest_id (if not authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/details?order_id=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "details"],
+							"query": [
+								{
+									"key": "order_id",
+									"value": "1",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Get order details\n\n**Required Fields:**\n- order_id"
+					},
+					"response": []
+				},
+				{
+					"name": "Track Order",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/track?order_id=1&contact_number=+1234567890",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "track"],
+							"query": [
+								{
+									"key": "order_id",
+									"value": "1",
+									"description": "Order ID"
+								},
+								{
+									"key": "contact_number",
+									"value": "+1234567890",
+									"description": "Contact number (required if not authenticated)"
+								}
+							]
+						},
+						"description": "Track order status\n\n**Required Fields:**\n- order_id\n- contact_number (if not authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Place Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							},
+							{
+								"key": "moduleId",
+								"value": "1",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cart\": [\n        {\n            \"item_id\": 1,\n            \"item_type\": \"Item\",\n            \"price\": 10.99,\n            \"quantity\": 2,\n            \"variation\": [],\n            \"add_on_ids\": [],\n            \"add_on_qtys\": []\n        }\n    ],\n    \"coupon_code\": \"DISCOUNT10\",\n    \"delivery_address_id\": 1,\n    \"order_type\": \"delivery\",\n    \"payment_method\": \"cash_on_delivery\",\n    \"guest_id\": \"123\",\n    \"delivery_instruction\": \"Leave at door\",\n    \"store_id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/place",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "place"]
+						},
+						"description": "Place a new order\n\n**Required Fields:**\n- cart: Array of cart items\n- delivery_address_id\n- order_type\n- payment_method\n- store_id\n\n**Optional Fields:**\n- coupon_code\n- guest_id\n- delivery_instruction"
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_id\": 1,\n    \"reason\": \"Changed my mind\",\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "cancel"]
+						},
+						"description": "Cancel an order\n\n**Required Fields:**\n- order_id\n- reason: Cancellation reason (max 255 characters)\n- guest_id (if not authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cancellation Reasons",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/cancellation-reasons",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "cancellation-reasons"]
+						},
+						"description": "Get list of cancellation reasons"
+					},
+					"response": []
+				},
+				{
+					"name": "Refund Request",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_id\": 1,\n    \"refund_reason\": \"Product damaged\",\n    \"customer_note\": \"Item arrived broken\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/refund-request",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "refund-request"]
+						},
+						"description": "Request refund for an order\n\n**Required Fields:**\n- order_id\n- refund_reason\n- customer_note"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Refund Reasons",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/refund-reasons",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "refund-reasons"]
+						},
+						"description": "Get list of refund reasons"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Payment Method",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"order_id\": 1,\n    \"payment_method\": \"digital_payment\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/order/payment-method",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "order", "payment-method"]
+						},
+						"description": "Update payment method for an order\n\n**Required Fields:**\n- order_id\n- payment_method"
+					},
+					"response": []
+				}
+			],
+			"description": "Order management endpoints"
+		},
+		{
+			"name": "Cart",
+			"item": [
+				{
+					"name": "Get Cart List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							},
+							{
+								"key": "moduleId",
+								"value": "1",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/cart/list?guest_id=123",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "cart", "list"],
+							"query": [
+								{
+									"key": "guest_id",
+									"value": "123",
+									"description": "Guest ID (required if not authenticated)"
+								}
+							]
+						},
+						"description": "Get cart items\n\n**Required Fields:**\n- guest_id (if not authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Add to Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							},
+							{
+								"key": "moduleId",
+								"value": "1",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guest_id\": \"123\",\n    \"item_id\": 1,\n    \"model\": \"Item\",\n    \"price\": 10.99,\n    \"quantity\": 2,\n    \"variation\": [],\n    \"add_on_ids\": [1, 2],\n    \"add_on_qtys\": [1, 1]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/cart/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "cart", "add"]
+						},
+						"description": "Add item to cart\n\n**Required Fields:**\n- item_id: Integer\n- model: \"Item\" or \"ItemCampaign\"\n- price: Numeric\n- quantity: Integer (min 1)\n- guest_id (if not authenticated)\n\n**Optional Fields:**\n- variation: JSON array\n- add_on_ids: JSON array\n- add_on_qtys: JSON array"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Cart",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							},
+							{
+								"key": "moduleId",
+								"value": "1",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guest_id\": \"123\",\n    \"cart_id\": 1,\n    \"quantity\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/cart/update",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "cart", "update"]
+						},
+						"description": "Update cart item quantity\n\n**Required Fields:**\n- cart_id\n- quantity\n- guest_id (if not authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Cart Item",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							},
+							{
+								"key": "moduleId",
+								"value": "1",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"cart_id\": 1,\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/cart/remove-item",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "cart", "remove-item"]
+						},
+						"description": "Remove item from cart\n\n**Required Fields:**\n- cart_id\n- guest_id (if not authenticated)"
+					},
+					"response": []
+				},
+				{
+					"name": "Remove Cart",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							},
+							{
+								"key": "moduleId",
+								"value": "1",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"guest_id\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/customer/cart/remove",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "customer", "cart", "remove"]
+						},
+						"description": "Clear entire cart\n\n**Required Fields:**\n- guest_id (if not authenticated)"
+					},
+					"response": []
+				}
+			],
+			"description": "Cart management endpoints"
+		},
+		{
+			"name": "Configuration",
+			"item": [
+				{
+					"name": "Get Configuration",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/config",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "config"]
+						},
+						"description": "Get system configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Zone ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/config/get-zone-id?latitude=37.7749&longitude=-122.4194",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "config", "get-zone-id"],
+							"query": [
+								{
+									"key": "latitude",
+									"value": "37.7749"
+								},
+								{
+									"key": "longitude",
+									"value": "-122.4194"
+								}
+							]
+						},
+						"description": "Get zone ID from coordinates"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Methods",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/config/get-PaymentMethods",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "config", "get-PaymentMethods"]
+						},
+						"description": "Get available payment methods"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Zone List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/zone/list",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "zone", "list"]
+						},
+						"description": "Get list of zones"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Module",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-localization",
+								"value": "en",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/v1/module",
+							"host": ["{{base_url}}"],
+							"path": ["api", "v1", "module"]
+						},
+						"description": "Get module information"
+					},
+					"response": []
+				}
+			],
+			"description": "Configuration endpoints"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+
