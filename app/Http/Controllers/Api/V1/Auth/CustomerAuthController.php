@@ -1072,29 +1072,44 @@ class CustomerAuthController extends Controller
         }
 
         // Generate token for successful OTP verification
+        // Always create token directly from user model (same pattern as registration)
         $token = null;
+        
+        // Refresh user to ensure we have the latest data
+        $user->refresh();
+        
         try {
-            if (auth()->loginUsingId($user->id)) {
-                $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
-                if(isset($request_data['guest_id'])){
-                    $this->check_guest_cart($user, $request_data['guest_id']);
-                }
-            } else {
-                // If loginUsingId fails, try to create token directly
-                $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
-                if(isset($request_data['guest_id'])){
-                    $this->check_guest_cart($user, $request_data['guest_id']);
-                }
+            // Create token using the same pattern as registration (line 621)
+            // This works in all environments when Passport is properly configured
+            $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
+            
+            // Handle guest cart if provided
+            if(isset($request_data['guest_id'])){
+                $this->check_guest_cart($user, $request_data['guest_id']);
             }
         } catch (\Exception $e) {
-            // Log error but continue - token generation should not block login
-            \Illuminate\Support\Facades\Log::error('Token generation failed in otp_login: ' . $e->getMessage());
-            // Try direct token creation as fallback
+            // Log error for debugging - this will help identify Passport configuration issues
+            \Illuminate\Support\Facades\Log::error('Token generation failed in otp_login for user ID ' . $user->id);
+            \Illuminate\Support\Facades\Log::error('Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('File: ' . $e->getFile() . ' Line: ' . $e->getLine());
+            
+            // Try alternative approach - login first then create token
             try {
-                $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
+                if (auth()->loginUsingId($user->id)) {
+                    $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
+                    if(isset($request_data['guest_id'])){
+                        $this->check_guest_cart($user, $request_data['guest_id']);
+                    }
+                }
             } catch (\Exception $e2) {
                 \Illuminate\Support\Facades\Log::error('Fallback token generation also failed: ' . $e2->getMessage());
             }
+        }
+        
+        // Final safety check - if token is still null, log detailed warning
+        if ($token === null) {
+            \Illuminate\Support\Facades\Log::warning('CRITICAL: Token is null after OTP login for user ID: ' . $user->id);
+            \Illuminate\Support\Facades\Log::warning('This may indicate Passport is not properly installed or oauth_clients table is missing');
         }
 
         // Refresh user to get latest data
