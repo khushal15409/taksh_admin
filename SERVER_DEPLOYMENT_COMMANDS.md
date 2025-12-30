@@ -4,7 +4,8 @@
 1. **Backup your database** before running migrations
 2. **Backup your application files** (especially `.env` file)
 3. Ensure PHP version is **8.2 or higher**
-4. Put your application in **maintenance mode** (optional but recommended)
+4. **Enable PHP Sodium Extension** (required for Laravel Passport)
+5. Put your application in **maintenance mode** (optional but recommended)
 
 ## Step-by-Step Deployment Commands
 
@@ -29,6 +30,8 @@ git pull origin main
 ```bash
 composer install --no-dev --optimize-autoloader
 ```
+
+**⚠️ If you get an error about missing `ext-sodium` extension, see the "PHP Sodium Extension Setup" section below.**
 
 ### 5. Clear All Caches
 ```bash
@@ -96,11 +99,16 @@ php artisan up
 ```bash
 cd /var/www/html/projects/admin-stage
 
+# ⚠️ FIRST: Verify PHP Sodium extension is enabled
+php -m | grep sodium
+# If not found, enable it first (see "PHP Sodium Extension Setup" section)
+
 # Optional: Enable maintenance mode
 php artisan down
 
 # Update dependencies
 composer install --no-dev --optimize-autoloader
+# If you get sodium error, use: composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-sodium
 
 # Clear caches
 php artisan optimize:clear
@@ -151,6 +159,82 @@ php artisan up
 - Make sure your `.env` file is properly configured
 - Check that `APP_ENV` and `APP_DEBUG` are set correctly for production
 
+## PHP Sodium Extension Setup
+
+### ⚠️ IMPORTANT: Required Extension
+Laravel Passport requires the PHP Sodium extension. If you see this error:
+```
+lcobucci/jwt 5.6.0 requires ext-sodium * -> it is missing from your system
+```
+
+### Solution 1: Enable Sodium Extension (Recommended)
+
+#### For cPanel/CloudLinux (PHP 8.4):
+```bash
+# Check current PHP version
+php -v
+
+# Enable sodium extension in php.ini
+# Edit the PHP configuration file:
+nano /opt/alt/php84/etc/php.ini
+# OR
+nano /opt/alt/php84/link/conf/alt_php.ini
+
+# Add or uncomment this line:
+extension=sodium
+
+# Save and restart PHP-FPM
+# For cPanel:
+/scripts/restartsrv_php-fpm
+# OR
+sudo systemctl restart php84-php-fpm
+```
+
+#### For Standard Linux (Ubuntu/Debian):
+```bash
+# Install sodium extension
+sudo apt-get update
+sudo apt-get install php8.4-sodium  # Adjust version as needed
+
+# OR for PHP 8.2:
+sudo apt-get install php8.2-sodium
+
+# Enable it in php.ini
+sudo nano /etc/php/8.4/fpm/php.ini  # Adjust path as needed
+# Add: extension=sodium
+
+# Restart PHP-FPM
+sudo systemctl restart php8.4-fpm  # Adjust version as needed
+```
+
+#### For CentOS/RHEL:
+```bash
+# Install sodium extension
+sudo yum install php-sodium
+# OR for newer versions:
+sudo dnf install php-sodium
+
+# Restart PHP-FPM
+sudo systemctl restart php-fpm
+```
+
+### Verify Sodium Extension is Enabled
+```bash
+php -m | grep sodium
+# Should output: sodium
+
+# OR check with:
+php -i | grep sodium
+```
+
+### Solution 2: Temporary Workaround (Not Recommended for Production)
+If you cannot enable the sodium extension immediately, you can temporarily ignore the requirement:
+```bash
+composer install --no-dev --optimize-autoloader --ignore-platform-req=ext-sodium
+```
+
+**⚠️ Warning**: This is a temporary workaround. The sodium extension is required for Laravel Passport to function properly. You should enable it as soon as possible.
+
 ## Troubleshooting
 
 ### If migrations fail:
@@ -165,7 +249,17 @@ sudo chown -R www-data:www-data storage bootstrap/cache
 sudo chmod -R 755 storage bootstrap/cache
 ```
 
-### If composer fails:
+### If composer fails due to missing extensions:
+```bash
+# Check which PHP extensions are installed
+php -m
+
+# If sodium is missing, enable it (see "PHP Sodium Extension Setup" above)
+# Then retry:
+composer install --no-dev --optimize-autoloader
+```
+
+### If composer fails with other errors:
 ```bash
 composer self-update
 composer install --no-dev --optimize-autoloader
