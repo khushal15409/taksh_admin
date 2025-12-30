@@ -1071,11 +1071,29 @@ class CustomerAuthController extends Controller
             $is_personal_info = 1;
         }
 
+        // Generate token for successful OTP verification
         $token = null;
-        if ($is_personal_info == 1 && auth()->loginUsingId($user->id)) {
-            $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
-            if(isset($request_data['guest_id'])){
-                $this->check_guest_cart($user, $request_data['guest_id']);
+        try {
+            if (auth()->loginUsingId($user->id)) {
+                $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
+                if(isset($request_data['guest_id'])){
+                    $this->check_guest_cart($user, $request_data['guest_id']);
+                }
+            } else {
+                // If loginUsingId fails, try to create token directly
+                $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
+                if(isset($request_data['guest_id'])){
+                    $this->check_guest_cart($user, $request_data['guest_id']);
+                }
+            }
+        } catch (\Exception $e) {
+            // Log error but continue - token generation should not block login
+            \Illuminate\Support\Facades\Log::error('Token generation failed in otp_login: ' . $e->getMessage());
+            // Try direct token creation as fallback
+            try {
+                $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
+            } catch (\Exception $e2) {
+                \Illuminate\Support\Facades\Log::error('Fallback token generation also failed: ' . $e2->getMessage());
             }
         }
 
