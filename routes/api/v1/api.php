@@ -407,6 +407,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::group(['prefix'=>'cart'], function() {
                 Route::get('list', 'CartController@get_carts');
                 Route::post('add', 'CartController@add_to_cart');
+                Route::post('bulk-add', 'CartController@bulk_add_to_cart');
                 Route::post('update', 'CartController@update_cart');
                 Route::delete('remove-item', 'CartController@remove_cart_item');
                 Route::delete('remove', 'CartController@remove_cart');
@@ -435,7 +436,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::post('reviews/submit', 'ItemController@submit_product_review')->middleware('auth:api');
             Route::get('common-conditions', 'ItemController@get_store_condition_products');
             Route::get('get-products', 'ItemController@get_products');
-            Route::get('list', 'ItemController@get_products');
+            Route::get('list', 'ItemController@list_products');
             Route::get('thirty-minute-delivery', 'ItemController@get_thirty_minute_delivery_items');
         });
 

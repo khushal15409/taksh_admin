@@ -7941,4 +7941,5 @@ Smartly or Earn. ',
   'failed_to_send_mail' => 'Failed to send mail',
   'OTP has expired. Please request a new one' => 'OTP has expired. Please request a new one',
   'your_account_is_blocked' => 'Your account is blocked',
+  'maximum_cart_quantity_exceeded' => 'Maximum cart quantity exceeded',
 );

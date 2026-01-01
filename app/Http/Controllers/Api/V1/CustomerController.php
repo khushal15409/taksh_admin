@@ -107,7 +107,7 @@ class CustomerController extends Controller
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
         $zone = Zone::whereContains('coordinates', new Point($request->latitude, $request->longitude, POINT_SRID))->get(['id']);
-        if (!$zone) {
+        if (count($zone) == 0) {
             $errors = [];
             array_push($errors, ['code' => 'coordinates', 'message' => translate('messages.service_not_available_in_this_area')]);
             return response()->json([

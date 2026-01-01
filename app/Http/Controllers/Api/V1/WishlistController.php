@@ -81,19 +81,21 @@ class WishlistController extends Controller
         $latitude= $request->header('latitude');
         $wishlists = Wishlist::where('user_id', $request->user()->id)->with(['item'=>function($q)use($zone_id){
             return $q->whereHas('store', function($query)use($zone_id){
-                $query->when(config('module.current_module_data'), function($query){
-                    $query->where('module_id', config('module.current_module_data')['id'])->whereHas('zone.modules',function($query){
-                        $query->where('modules.id', config('module.current_module_data')['id']);
+                $query->when(config('module.current_module_data') && isset(config('module.current_module_data')['id']), function($query){
+                    $moduleId = config('module.current_module_data')['id'];
+                    $query->where('module_id', $moduleId)->whereHas('zone.modules',function($query) use ($moduleId){
+                        $query->where('modules.id', $moduleId);
                     });
                 })->whereHas('module',function($query){
                     $query->where('status',1);
                 })->whereIn('zone_id', json_decode($zone_id, true));
             });
         }, 'store'=>function($q)use($zone_id,$longitude,$latitude){
-            return $q->when(config('module.current_module_data'), function($query)use($zone_id){
-                $query->whereHas('zone.modules', function($query){
-                    $query->where('modules.id', config('module.current_module_data')['id']);
-                })->module(config('module.current_module_data')['id']);
+            return $q->when(config('module.current_module_data') && isset(config('module.current_module_data')['id']), function($query)use($zone_id){
+                $moduleId = config('module.current_module_data')['id'];
+                $query->whereHas('zone.modules', function($query) use ($moduleId){
+                    $query->where('modules.id', $moduleId);
+                })->module($moduleId);
             })->withOpen($longitude??0,$latitude??0)->whereHas('module',function($query){
                 $query->where('status',1);
             })->whereIn('zone_id', json_decode($zone_id, true));

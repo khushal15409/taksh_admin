@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\DataSetting;
 use App\Models\Banner;
 use App\Models\Item;
+use App\Models\Zone;
 use App\Scopes\ZoneScope;
 use App\CentralLogics\Helpers;
 use App\CentralLogics\ProductLogic;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class HomeController extends Controller
 {
@@ -73,8 +75,37 @@ class HomeController extends Controller
     public function dashboard(Request $request)
     {
         try {
-            // Zone ID is optional - if not provided, get all data without zone filter
+            // Get zone_id from header or detect from latitude/longitude
             $zone_id = $request->header('zoneId');
+            
+            // If zone_id not provided, try to detect from latitude/longitude
+            if (!$zone_id) {
+                $latitude = $request->query('latitude') ?? $request->header('latitude');
+                $longitude = $request->query('longitude') ?? $request->header('longitude');
+                
+                if ($latitude && $longitude) {
+                    try {
+                        // Find zone(s) that contain the given coordinates
+                        // Order by area (smallest first) to get most specific zone first
+                        $zones = Zone::whereContains('coordinates', new Point($latitude, $longitude, POINT_SRID))
+                            ->where('status', 1)
+                            ->selectRaw('id, ABS(ST_Area(coordinates)) as area')
+                            ->orderBy('area', 'asc')
+                            ->latest()
+                            ->get();
+                        
+                        if ($zones && count($zones) > 0) {
+                            // Get zone IDs as array (can be multiple if zones overlap)
+                            $zoneIds = $zones->pluck('id')->toArray();
+                            $zone_id = json_encode($zoneIds);
+                        }
+                    } catch (\Exception $e) {
+                        // If zone detection fails, continue without zone_id
+                        // This allows the API to work without zone filtering
+                    }
+                }
+            }
+            
             $limit = (int)$request->query('limit', 10); // Default limit for products
             $offset = (int)$request->query('offset', 1); // Default offset for products
             
